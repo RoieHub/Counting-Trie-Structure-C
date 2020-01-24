@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -5,8 +6,6 @@
 #define NUM_LETTERS (26) 
 #define MAX_WORD (30)
 #define MAX_LINE (256)
-char wordBuffer[MAX_WORD];
-char lineBuffer[MAX_LINE];
 // typedef enum {FALSE = 0, TRUE = 1} boolean; 
 typedef struct node
 {
@@ -51,7 +50,8 @@ int main(int argc, char *argv[])
             printRevLexi(root);
         }
 
-
+    free(root);
+  //  free(string); what to do?
 	return 0 ;
 }
 
@@ -160,7 +160,7 @@ int updateWordInTrie(node* root , char* word)
 
 node* initTrieRoot()
 {
-    node* root = malloc(sizeof(node));
+    node* root = malloc(sizeof(node)); 
     root->count = 0;
     root->word = "";
     root->letter = '\0';
@@ -221,7 +221,9 @@ node* PreParringTheText(char* word ,node* root)
     currentWord[next_Word_Length] = '\0';
     updateWordInTrie(root , currentWord);
     i=i+next_Word_Length+1;
+    free(currentWord);
     }
+    free(word);
     return root;
 
    // printf(" the size if this Word is :%d " , size);
