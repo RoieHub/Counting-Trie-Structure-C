@@ -9,169 +9,118 @@
 // typedef enum {FALSE = 0, TRUE = 1} boolean; 
 typedef struct node
 {
-    char letter;
     long unsigned int count;
     struct node* children[NUM_LETTERS];
     char* word;
-
 } node;
-
 
 // Headers////
 node* getNewChildNode(node* father ,char currentLetter);
 bool isCapital(char a);
 bool IsCharacter(char a);
-node* initTrieRoot();
-char* Decapitalize(char* input ,int sizeOfInput);
-int nextWordLength(char* wordStart);
-char* wordString(char* startOfWord);
+void Decapitalize(char* input ,int sizeOfInput);
+int nextWordLength(char* wordStart, int* offset);
 //void InitTreeByText(node* root, char* text);
-int textSize(char*text);
-node* PreParringTheText(char* word,node* root);
-int updateWordInTrie(node* root , char* word);
+void PreparingTheText(char* word,node* root);
+void updateWordInTrie(node* root , char* word, int length);
 void printLexi(node* root);
 void printRevLexi(node* root);
-bool noChildren(node* root);
 
 int main(int argc, char *argv[])
 {
-     node* root = initTrieRoot();
-	char string[100];
-    while(fgets(string, 100,stdin))
-    {
-	    PreParringTheText(string,root);
+    node root;
+    int i;
+    root.count = 0;
+    root.word = malloc(1);
+    *root.word = '\0';
+    for (i = 0; i < NUM_LETTERS; i++){
+        root.children[i] = NULL;
     }
 
-  if(argc == 1)
-            printLexi(root); 
-        else
-        {
-        
-            printRevLexi(root);
-        }
+	char string[100];
+    while(fgets(string, 100, stdin))
+    {
+	    PreparingTheText(string, &root);
+    }
 
-    free(root);
-  //  free(string); what to do?
+    if(argc == 1)
+    {
+        printLexi(&root); 
+    }
+    else
+    {
+        printRevLexi(&root);
+    }
 	return 0 ;
-}
-
-bool noChildren(node* root)
-{
-	bool noChildFound = true;
-	int i;
-	for(i = 0 ; (i < NUM_LETTERS) && (noChildFound) ; i++ )
-		noChildFound = ((root->children[i]) == NULL);
-	return noChildFound;
 }
 
 void printLexi(node* root)
 {
-
-	int i;
-
-	// Stop condition
-	if(noChildren(root) || root->count)
+	int i;	
+    if(root->count)
 	{
-		printf("%s%c\t%d\n",root->word,root->letter,root->count);
+		printf("%s\t%ld\n", root->word, root->count);
 	}
-
+    free(root->word);
 	for(i = 0 ; i < NUM_LETTERS ; i++)
 	{
 		if(root->children[i] != NULL)
 		{
 			printLexi(root->children[i]);
+            free (root->children[i]);
 		}
-
-
 	}
-
-
 }
 void printRevLexi(node* root)
 {
-	int i;
-	if(noChildren(root) && root->count)
+    int i;
+    for(i = NUM_LETTERS - 1 ; i >= 0; i--)
+    {
+        if(root->children[i] != NULL)
+        {
+            printRevLexi(root->children[i]);
+            free(root->children[i]);
+        }
+    }
+    if(root->count)
 	{
-		printf("%s%c\t%d\n",root->word,root->letter,root->count);
-		free(root);
+		printf("%s\t%ld\n", root->word, root->count);
 	}
-	else{
-		for(i = NUM_LETTERS-1 ; i > -1 ; i--)
-		{
-			if(root->children[i] != NULL)
-			{
-				printRevLexi(root->children[i]);
-				root->children[i] = NULL;
-			}
-
-
-		}
-		if(root->count)
-					{
-					printf("%s%c\t%d\n",root->word,root->letter,root->count);
-					free(root);
-					}
-	}
-
+    free (root->word);
 }
 
 // This methods work on a Valid word ONLY!
-int updateWordInTrie(node* root , char* word)
+void updateWordInTrie(node* root , char* word, int length)
 {
-	int wordLength = 0;
-	char currentLetter  = word[wordLength];
+	int i = 0;
+	char currentLetter  = word[0];
 	node* currentNode = root;
 	// Init children index
 	int letterIndex = currentLetter - 'a';
 	// At this point there is a Child to our Root.
-
 	while(true)
-		
 	{
-		// If the next char is not a letter
-
-
 		if (currentNode->children[letterIndex] == NULL)
 		{
 			// Create if not exist.
 			currentNode->children[letterIndex] = getNewChildNode(currentNode ,currentLetter);
 		}
-		if (!IsCharacter(word[wordLength + 1]))
-		{
-			// That means the word is ended
-			currentNode = currentNode->children[letterIndex]; // Set current Node to be his proper child
-			wordLength++;
-			currentNode->count++;
-			
-			return wordLength;
-		}
 
-		else{
+        // Last letter of the word
+		if (i == (length - 1))
+		{
 			currentNode = currentNode->children[letterIndex]; // Set current Node to be his proper child
-			wordLength++;
-			currentLetter = word[wordLength];
+			currentNode->count++;
+            return;
+		}
+		else
+        {
+			currentNode = currentNode->children[letterIndex]; // Set current Node to be his proper child
+			currentLetter = word[++i];
 			letterIndex = currentLetter - 'a';
 		}
 	}
-
-
-	return wordLength;
 }
-
-node* initTrieRoot()
-{
-    node* root = malloc(sizeof(node)); 
-    root->count = 0;
-    root->word = "";
-    root->letter = '\0';
-    int i; // for Now the RootLetter is @
-    // Set all children to NULL
-	for (i = 0; i < NUM_LETTERS; i++)
-		root->children[i] = NULL;
-
-    return root;
-}
-
 
 node* getNewChildNode(node* father ,char currentLetter)
 {
@@ -179,7 +128,6 @@ node* getNewChildNode(node* father ,char currentLetter)
     // Create the node
 	node* Node = malloc(sizeof(node));
     char* fathersWord = father->word;
-
     // Set count to 0
     Node->count = 0;
     size_t fWordLen = strlen(father->word);
@@ -189,47 +137,33 @@ node* getNewChildNode(node* father ,char currentLetter)
     // Set Word
     char *newWord = malloc(fWordLen + 2); //+1  +1 for the null-terminator
     strcpy(newWord,fathersWord);
-    newWord[fWordLen] = father->letter;
-    newWord[fWordLen+1] = '\0';
-
+    newWord[fWordLen] = currentLetter;
+    newWord[fWordLen + 1] = '\0';
     Node->word = newWord;
-
     // Set Letter;
-    Node->letter = currentLetter;
     return Node;
-
 }
 
-node* PreParringTheText(char* word ,node* root)
+void PreparingTheText(char* line ,node* root)
 {
 	int next_Word_Length = 0;
     int i = 0;
-    //char a = 'abc';
-   // printf("this is the word :%s\n" , word);
-    int size = (textSize(word));
-    //printf(" the size is : %d\n", size);
-    word = Decapitalize(word,size);
-    //we can work after this!!!!!!!!!!!!!!
-   // printf(" im here %s\n",lower);
-    //node* root = initTrieRoot();
-    while(i<size)
+    int size = strlen(line);
+    Decapitalize(line,size);
+    int offset = 0;
+    next_Word_Length = nextWordLength(line, &i);
+    while(next_Word_Length != 0)
     {
+        char* currentWord = malloc(next_Word_Length + 1); //chacnge word to lower
+        memcpy(currentWord, &line[i + offset], next_Word_Length);
+        currentWord[next_Word_Length] = '\0';
+        updateWordInTrie(root , currentWord, next_Word_Length);
+        free(currentWord);
 
-    next_Word_Length = nextWordLength(&word[i]);
-    char* currentWord = calloc(next_Word_Length+1,sizeof(char)); //chacnge word to lower
-    currentWord = wordString(&word[i]);
-    currentWord[next_Word_Length] = '\0';
-    updateWordInTrie(root , currentWord);
-    i=i+next_Word_Length+1;
-    free(currentWord);
+        i = i + next_Word_Length + offset;
+        next_Word_Length = nextWordLength(&line[i], &offset);
+        
     }
-    free(word);
-    return root;
-
-   // printf(" the size if this Word is :%d " , size);
-   // printf("This is sparta\n");
-    //printf("%s\n" , word);
-
 }
 
 bool IsCharacter(char a)
@@ -241,65 +175,42 @@ bool isCapital(char a)
     return((a >= 'A') && (a <= 'Z'));
 }
 
-char* Decapitalize(char* input,int sizeOfInput)
+void Decapitalize(char* input,int sizeOfInput)
 {
     int i ;
     int DIST = 'a' - 'A';
-    int sizeOfChar = sizeof(char);
-    char* newword = calloc(sizeOfInput,sizeOfChar);
-    for(i=0;i<sizeOfInput; i++)
+    for(i = 0; i < sizeOfInput; i++)
     {
         if(isCapital(input[i]))
         {
-            newword[i] = (char)((int)(input[i])+DIST);   
+            input[i] += DIST;
         }
-        else
+    }
+}
+
+int nextWordLength(char* wordStart, int* offset)
+{
+    int offsetCounter = 0;
+    while(!IsCharacter(wordStart[offsetCounter]))
+    {
+        if (wordStart[offsetCounter] == '\0')
         {
-             newword[i] = input[i];
+            return 0;
         }
+
+        offsetCounter++;
     }
-       
-   // printf(" After decapitalization : %s\n",newword);
 
-   // printf("\nTest Print %s\n",input);
-    return newword;
+    int wordLength = 0;
 
-
-}
-
-
-// Work only with lowercase letters , so decapitalize is necessery
-int textSize(char*text)
-{
-    int sizeOfText = 0;
-    while(text[sizeOfText] != '\0')
-    {
-        sizeOfText++;
-    }
-    return sizeOfText; 
-}
-int nextWordLength(char* wordStart)
-{
-    // If the Word is empty, return
-    if (wordStart[0] == '\0')
-    {
-        return 1; /// Might BE WRONG
-    }
-   int wordLengthCounter = 0;
     // Finding the length of the Word
-    while(IsCharacter(wordStart[wordLengthCounter]))
+    while(IsCharacter(wordStart[offsetCounter + wordLength]))
     {
-        wordLengthCounter++;
+        wordLength++;
     }
-    return wordLengthCounter;     
-}
-// This methods extracts a word from a text 
-char* wordString(char* startOfWord )
-{ 
-    int sizeOfWord = nextWordLength(startOfWord);
-    char* theWord = malloc(sizeof(char)*sizeOfWord);
-    memcpy(theWord,startOfWord , sizeOfWord);
-    return theWord;
+
+    *offset = offsetCounter;
+    return wordLength;     
 }
 
 
